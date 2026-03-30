@@ -1,8 +1,6 @@
 #![allow(dead_code)]
 use std::borrow::Cow;
 
-use regex_lite::Regex;
-
 struct S(String);
 
 fn main() {
@@ -19,15 +17,7 @@ async fn repro<'a>(s: &'a S) -> Cow<'a, str> {
         return Cow::Borrowed(&s.0); // => &s.0は&StringだからCow<'_, String>。ここをas_str()に変えるとエラーなくなる（下に例あり）。
     }
 
-    let regex = Regex::new(".").unwrap();
-
-    let replaced = regex.replace_all(&s.0, "");
-    let cow = to_cow(&s.0);
-    match replaced {
-        Cow::Borrowed(borrowed) if borrowed.len() == s.0.len() => cow,
-        Cow::Borrowed(borrowed) => Cow::Owned(borrowed.to_owned()),
-        Cow::Owned(owned) => Cow::Owned(owned),
-    }
+    to_cow(&s.0)
 }
 
 // asyncなしだとエラーなし
@@ -35,16 +25,8 @@ fn no_repro_sync<'a>(s: &'a S) -> Cow<'a, str> {
     if s.0.is_empty(){
         return Cow::Borrowed(&s.0);
     }
-
-    let regex = Regex::new(".").unwrap();
-
-    let replaced = regex.replace_all(&s.0, "");
-    let cow = to_cow(&s.0);
-    match replaced {
-        Cow::Borrowed(borrowed) if borrowed.len() == s.0.len() => cow,
-        Cow::Borrowed(borrowed) => Cow::Owned(borrowed.to_owned()),
-        Cow::Owned(owned) => Cow::Owned(owned),
-    }
+    
+    to_cow(&s.0)
 }
 
 async fn no_repro_as_str<'a>(s: &'a S) -> Cow<'a, str> {
@@ -52,14 +34,5 @@ async fn no_repro_as_str<'a>(s: &'a S) -> Cow<'a, str> {
         return Cow::Borrowed(s.0.as_str());
     }
 
-    let regex = Regex::new(".").unwrap();
-
-    let replaced = regex.replace_all(&s.0, "");
-    let cow = to_cow(&s.0);
-    match replaced {
-        Cow::Borrowed(borrowed) if borrowed.len() == s.0.len() => cow,
-        Cow::Borrowed(borrowed) => Cow::Owned(borrowed.to_owned()),
-        Cow::Owned(owned) => Cow::Owned(owned),
-    }
+    to_cow(&s.0)
 }
-
